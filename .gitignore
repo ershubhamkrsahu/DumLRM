@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Upstream reference clone used while working through the chapters
+/reasoning-from-scratch/
