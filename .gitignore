@@ -1,18 +1,54 @@
-# Python-generated files
+# Byte-compiled files and build artifacts
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.egg-info/
 build/
 dist/
 wheels/
-*.egg-info
+.eggs/
+*.so
 
 # Virtual environments
-.venv
+.venv/
+venv/
+env/
+
+# Tool caches and test output
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
 
 # Upstream reference clone used while working through the chapters
 /reasoning-from-scratch/
 
 # Downloaded model assets (reproducible via the download helpers)
 *.pth
+*.pt
 *.safetensors
+*.ckpt
+*.bin
+*.onnx
+*.model
 tokenizer-*.json
