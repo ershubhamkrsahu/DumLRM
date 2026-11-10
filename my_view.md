@@ -18,3 +18,9 @@ Then I pulled the full 0.6B base checkpoint (1.4 GiB) and added the device-selec
 
 Next: load the checkpoint into the Qwen3 model and validate the forward pass. That's the first real test of whether the architecture code is actually correct.
 
+## 2026-11-11 — Chapter 2: the pretrained checkpoint loads clean
+
+The Qwen3 0.6B weights went into my `Qwen3Model` with a strict state-dict match on the first attempt. That's the signal I was waiting for: the config and parameter names line up with the real model, so the architecture I'm building matches what these weights expect.
+
+Loading is necessary but not sufficient, though. Next I need an actual forward pass and a look at the logits before I trust the model for generation.
+
