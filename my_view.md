@@ -10,3 +10,11 @@ I also grabbed the 0.6B base checkpoint locally so I can load weights without re
 
 Next I want the checkpoint loaded in the Qwen3 class and a forward pass verified before I trust anything downstream.
 
+## 2026-11-11 — Chapter 2: tokenizer verified, weights on disk, device picked
+
+Encoding and decoding now agree, so the tokenizer side of chapter 2 is solid. I made the notebook print each token with the decoded text wrapped in backticks — a small change, but it makes whitespace visible, and whitespace is exactly where I'd expect BPE to bite me later.
+
+Then I pulled the full 0.6B base checkpoint (1.4 GiB) and added the device-selection helper. My 3060 runs CUDA 12.4 with torch 2.4.1, so the helper takes the legacy TF32 branch; newer torch versions moved that setting to the fp32_precision API. I'm enabling TF32 because the matmul speedup is worth the tiny precision loss while I'm still getting things working.
+
+Next: load the checkpoint into the Qwen3 model and validate the forward pass. That's the first real test of whether the architecture code is actually correct.
+
