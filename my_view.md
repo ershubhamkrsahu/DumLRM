@@ -24,3 +24,9 @@ The Qwen3 0.6B weights went into my `Qwen3Model` with a strict state-dict match 
 
 Loading is necessary but not sufficient, though. Next I need an actual forward pass and a look at the logits before I trust the model for generation.
 
+## 2026-11-11 — Chapter 2: first forward pass
+
+The model ran end to end: six prompt tokens in, a `[6, 151936]` logits tensor out. That vocabulary dimension matching Qwen3's 151,936 tokens is the concrete proof that the output head and the checkpoint actually agree, not just that the parameter names lined up.
+
+The remaining bridge is turning those logits into predicted tokens — that's where an off-by-one or a wrong transpose would finally show up.
+
