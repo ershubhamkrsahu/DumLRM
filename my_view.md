@@ -30,3 +30,9 @@ The model ran end to end: six prompt tokens in, a `[6, 151936]` logits tensor ou
 
 The remaining bridge is turning those logits into predicted tokens — that's where an off-by-one or a wrong transpose would finally show up.
 
+## 2026-11-11 — Chapter 2: it generates text
+
+I wired up a streaming generator — greedy argmax on the last position, yield each token, stop on EOS — and it produced coherent English on the first run. Watching my own forward pass turn into readable output is the point where chapter 2 stopped feeling theoretical.
+
+The implementation is deliberately naive: it re-runs the whole sequence for every new token, so it gets slower the longer the output. I'm leaving that alone for now; the KV-cache version is where the real optimization work starts, and I'd rather have a correct baseline to compare against.
+
