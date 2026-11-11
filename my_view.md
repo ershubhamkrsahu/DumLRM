@@ -36,3 +36,9 @@ I wired up a streaming generator — greedy argmax on the last position, yield e
 
 The implementation is deliberately naive: it re-runs the whole sequence for every new token, so it gets slower the longer the output. I'm leaving that alone for now; the KV-cache version is where the real optimization work starts, and I'd rather have a correct baseline to compare against.
 
+## 2026-11-11 — Chapter 2: baseline numbers
+
+I stopped guessing and measured the naive generator: 25 new tokens in 1.08 s, about 23 tokens/sec, with 1.47 GB peak CUDA memory. That's the baseline every optimization from here has to beat.
+
+The detail that matters is the measurement itself — synchronizing CUDA before reading the clock and resetting peak memory afterwards. Without the sync the timing is meaningless, because the kernel launches return before the GPU finishes. Now the KV-cache rewrite gets a fair comparison instead of a flattering one.
+
