@@ -86,3 +86,11 @@ The first sample I ran makes the chapter's case for it. Asked to solve `(3x-9)/2
 
 I'd rather build that on a clean interface now than bolt it on after the fact.
 
+## 2026-11-11 — Chapter 4: "explain step by step" fixes the wrong answer
+
+Appending "Explain step by step." to the same prompt turned that `20` into a full derivation ending in `\boxed{83}` — correct. Same model, same greedy decoding, same problem; the only change is asking it to show its work.
+
+That reframes the chapter for me. The model already knew the algebra, it just wasn't committing to the intermediate steps. Sampling a pile of guesses may still help later, but this is the cheapest accuracy win available, and it tells me the later techniques are adding something on top of a model that can already reason when prompted properly.
+
+I'm keeping the prompt change explicit in the notebook so it's clear which single variable moved the result.
+
