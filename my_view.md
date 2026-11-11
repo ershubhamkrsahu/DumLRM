@@ -52,5 +52,13 @@ I'm keeping both generators side by side. The next step is the real fix — prea
 
 ## 2026-11-11 — Chapter 2: skipping torch.compile
 
-I tried wrapping the generator in `torch.compile` and it failed. I'm not going to chase that right now — the manual KV-cache rewrite is the thing I actually want to understand, and fighting the compiler would only delay it. Once the cache is preallocated and I have clean before/after numbers, I'll come back and see whether compile stacks on top.
+I tried wrapping the generator in `torch.compile` and it failed with "Cannot find a working triton installation". On Windows that's a toolchain problem rather than a code problem, and I'm not going to chase it right now — the manual KV-cache rewrite is the thing I actually want to understand. Once the cache is preallocated and I have clean before/after numbers, I'll come back and see whether compile stacks on top.
+
+## 2026-11-11 — Chapter 3: a real prompt, and the base model does math
+
+I split the notebooks by chapter — chapter 2 is now `ch02_llm_basics`, and chapter 3 begins in `ch03_measuring_performance`. The first thing I wanted was a reusable `load_model_and_tokenizer` helper so I stop copy-pasting model setup between notebooks; it handles both the base and reasoning checkpoints, including the reasoning tokenizer's chat and thinking flags.
+
+Then I gave the base model an actual math problem: given `a+b=3` and `ab=13/6`, find `a²+b²`. It ran for up to 2048 tokens, wrote out the full derivation, and landed on `14/3` — correctly. Rendering the generated LaTeX with `display(Math(...))` also showed me how much of the "reasoning" is just the model writing the algebra out step by step.
+
+Chapter 3 is about measuring this properly, so the next step is timing long generations like this one instead of eyeballing them.
 
