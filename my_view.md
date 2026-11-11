@@ -42,3 +42,11 @@ I stopped guessing and measured the naive generator: 25 new tokens in 1.08 s, ab
 
 The detail that matters is the measurement itself — synchronizing CUDA before reading the clock and resetting peak memory afterwards. Without the sync the timing is meaningless, because the kernel launches return before the GPU finishes. Now the KV-cache rewrite gets a fair comparison instead of a flattering one.
 
+## 2026-11-11 — Chapter 2: the KV cache is correct, but not faster
+
+I added a cached generator that keeps keys and values across steps and only feeds the newest token. It produces the same text as the naive loop, so the mechanism is right — but the benchmark says 24 tokens/sec against 27 for the version that recomputes everything, with memory essentially unchanged (2.90 vs 2.94 GB).
+
+The reason is in the cache itself: this implementation concatenates the cached K/V with the new ones on every step, so each token copies an ever-growing buffer through all 24 layers. The saved compute doesn't outrun that copy at these lengths. It also means the "optimization" is measured honestly instead of assumed.
+
+I'm keeping both generators side by side. The next step is the real fix — preallocating the cache and writing into a fixed slot — and I want the before/after numbers to stay in the notebook so the speedup is provable.
+
