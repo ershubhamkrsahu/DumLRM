@@ -110,3 +110,11 @@ Running the algebra prompt at `temperature=1.1, top_p=0.8` still reached `83`, b
 
 Top-p also fixes the failure mode I saw with high temperature alone: it cuts the flat, low-probability tail that produces nonsense while leaving real choice among the plausible tokens.
 
+## 2026-11-12 — Chapter 4: self-consistency turns samples into a decision
+
+Sampling several answers does nothing on its own; I still needed a way to choose between them. `self_consistency_vote` generates `num_samples` answers, extracts the final candidate from each, and takes the majority. Ties return `None` instead of letting the first answer win arbitrarily.
+
+The first run was the tie case I needed to see: five samples at temperature 0.8 and top-p 0.9 gave `83` twice, `11` once, and two empty extractions, so there was no winner. That's a real limitation — a sample the extractor can't parse is a vote thrown away, and two of them is enough to deadlock a small sample.
+
+Running the same five samples batched gave three `83` and settled on `83` in 17.53s, against 39.92s for the sequential pass. Roughly 2.3× faster for the same work, which makes batching the version worth keeping. The empty extractions are the next thing to fix.
+
