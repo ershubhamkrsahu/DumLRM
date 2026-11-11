@@ -62,3 +62,11 @@ Then I gave the base model an actual math problem: given `a+b=3` and `ab=13/6`, 
 
 Chapter 3 is about measuring this properly, so the next step is timing long generations like this one instead of eyeballing them.
 
+## 2026-11-11 — Chapter 3: the answer grader works
+
+I finally have a grader I trust enough to build on. `split_into_parts` handles tuple and list answers, and `grade_answer` normalizes both sides and compares each part with the sympy check. Sixteen cases — fractions, roots, decimals, tuples, percentages, `\text{}`, `\cdot`, degrees, superscripts — all land on the expected result, including the tuple case that returned False a few cells earlier.
+
+The cases that are supposed to fail also fail: wrong order, wrong length, `50%` versus `1/2`, and `0.333...` versus `1/3`. That matters more than the passes — a grader that says yes to everything would be worse than having none.
+
+Next is running this over a real evaluation set so I get an actual accuracy number instead of a vibe.
+
