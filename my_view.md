@@ -94,3 +94,11 @@ That reframes the chapter for me. The model already knew the algebra, it just wa
 
 I'm keeping the prompt change explicit in the notebook so it's clear which single variable moved the result.
 
+## 2026-11-12 — Chapter 4: temperature turns the model into a sampler
+
+I added temperature scaling to the cached generator: divide the logits by `T`, softmax them, then draw with `torch.multinomial` instead of taking the argmax. Temperature 0 stays on the exact greedy path, so I always have deterministic output to fall back on.
+
+Seeing the distribution made it click. At low temperature the "Berlin" completion still dominates but is no longer guaranteed — 1000 samples at `T=0.35` gave roughly 443 ` berlin`, 292 newline, and 116 ` Berlin`. At `T=5` the logits flatten into near-uniform noise, which is exactly the failure mode sampling can introduce.
+
+That's the tradeoff I'm buying into: diversity is what lets me try several answers, but it only helps if I have a way to pick the good one. Next is generating multiple candidates and choosing between them.
+
