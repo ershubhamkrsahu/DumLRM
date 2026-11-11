@@ -102,3 +102,11 @@ Seeing the distribution made it click. At low temperature the "Berlin" completio
 
 That's the tradeoff I'm buying into: diversity is what lets me try several answers, but it only helps if I have a way to pick the good one. Next is generating multiple candidates and choosing between them.
 
+## 2026-11-12 — Chapter 4: top-p keeps sampling from wandering off
+
+I wired the nucleus filter into a real generator: `top_p_filter` sorts probabilities, keeps the smallest set whose mass crosses `p`, and renormalizes. `generate_text_top_p_stream_cache` applies it after temperature scaling, with `top_p=None` meaning unfiltered.
+
+Running the algebra prompt at `temperature=1.1, top_p=0.8` still reached `83`, but through a different derivation than the greedy run. That's the behavior I wanted from inference scaling — different reasoning paths, not just different wording.
+
+Top-p also fixes the failure mode I saw with high temperature alone: it cuts the flat, low-probability tail that produces nonsense while leaving real choice among the plausible tokens.
+
