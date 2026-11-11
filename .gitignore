@@ -51,4 +51,6 @@ Thumbs.db
 *.bin
 *.onnx
 *.model
-tokenizer-*.json
+
+# Datasets and generated JSON downloads
+*.json
