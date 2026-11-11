@@ -70,3 +70,11 @@ The cases that are supposed to fail also fail: wrong order, wrong length, `50%` 
 
 Next is running this over a real evaluation set so I get an actual accuracy number instead of a vibe.
 
+## 2026-11-11 — Chapter 3: the first real accuracy number
+
+I ran the base model over the first 10 MATH-500 problems with a "you are a math assistant" template and got 30% (3/10) in 21 seconds. That's the first honest number I've had, and it's lower than the earlier standalone math prompt made things feel — the same model that produced `14/3` answered `10` to that exact problem once it was wrapped in the assistant template.
+
+That's useful rather than disappointing. It tells me the base model is very sensitive to prompt shape, and that the earlier correct answer wasn't representative of anything. The evaluation loop writes every generation to a JSONL file, so I can go read the failures instead of only counting them.
+
+Next: inspect that file for systematic failure modes before changing anything, then run the full 500.
+
