@@ -78,3 +78,11 @@ That's useful rather than disappointing. It tells me the base model is very sens
 
 Next: inspect that file for systematic failure modes before changing anything, then run the full 500.
 
+## 2026-11-11 — Chapter 4: inference scaling begins
+
+Chapter 4 starts with a small but important change to the generation wrapper: `generate_text_stream_concat_flex` takes a `generate_func` plus extra keyword arguments, so the sampling and multi-candidate strategies later in the chapter can plug into the same loop instead of me rewriting it each time.
+
+The first sample I ran makes the chapter's case for it. Asked to solve `(3x-9)/2 = x+37`, the base model answered `20`; the actual answer is `83`. One greedy sample is not reliable, which is exactly why the next sections are about generating more than one and choosing between them.
+
+I'd rather build that on a clean interface now than bolt it on after the fact.
+
