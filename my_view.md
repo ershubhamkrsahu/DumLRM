@@ -50,3 +50,7 @@ The reason is in the cache itself: this implementation concatenates the cached K
 
 I'm keeping both generators side by side. The next step is the real fix — preallocating the cache and writing into a fixed slot — and I want the before/after numbers to stay in the notebook so the speedup is provable.
 
+## 2026-11-11 — Chapter 2: skipping torch.compile
+
+I tried wrapping the generator in `torch.compile` and it failed. I'm not going to chase that right now — the manual KV-cache rewrite is the thing I actually want to understand, and fighting the compiler would only delay it. Once the cache is preallocated and I have clean before/after numbers, I'll come back and see whether compile stacks on top.
+
