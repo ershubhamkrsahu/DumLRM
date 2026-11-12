@@ -234,3 +234,13 @@ The check that it is the same quantity as before: averaging the answer tokens fr
 
 On three train examples the base model sits at `0.98`, and on three validation examples `1.02`. Those are low because the targets are R1's polished solutions and the 0.6B base model already finds them plausible — which is exactly the point of distillation and also the danger. If the model already agrees this strongly, the gradient has little to teach it, and I should watch whether the loss can move much at all.
 
+## 2026-11-13 — Chapter 8: the training loop runs out of memory
+
+The distillation loop is written: AdamW at `lr=5e-6`, per-example steps with gradient clipping at `1.0`, validation every five steps, epoch checkpoints, and a CSV row per log line. I ran it on ten train and ten validation examples for two epochs, and it logged exactly one line — `train_loss=0.9688 val_loss=0.9074` at step 5 — then died with a CUDA out-of-memory error trying to allocate 124 MiB.
+
+The memory report is the interesting part. It says the GPU has 6.00 GiB, 0 bytes free, and "12.29 GiB is allocated by PyTorch". Twelve gigabytes cannot be allocated on a six gigabyte card, so something else is holding memory or the allocator is oversubscribed by fragmentation and cached blocks. Either way the failure is not in the loop logic — the loss and the step both work — it is in the memory budget.
+
+Some of that budget I can explain. The loss keeps full-vocabulary logits for the whole sequence: 2,048 positions against a 151,900-token vocabulary is about 1.2 GB in float32 for the logits alone, and autograd holds onto them for the backward pass. Add the optimizer's own state for 0.6B parameters and there is not much left on a 6 GiB card.
+
+So before training this chapter properly I need one of: batched or chunked loss computation that does not materialize every position at once, activation checkpointing, a smaller context, or simply a bigger GPU. I'd rather fix the memory profile than shrink the data further — I already threw away 44% of it to fit 2,048 tokens.
+
