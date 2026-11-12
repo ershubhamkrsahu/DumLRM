@@ -244,3 +244,11 @@ Some of that budget I can explain. The loss keeps full-vocabulary logits for the
 
 So before training this chapter properly I need one of: batched or chunked loss computation that does not materialize every position at once, activation checkpointing, a smaller context, or simply a bigger GPU. I'd rather fix the memory profile than shrink the data further — I already threw away 44% of it to fit 2,048 tokens.
 
+## 2026-11-13 — Chapter 8: the loop belongs in a script
+
+The training loop is now `distill.py` rather than a notebook cell. A 6,670-example epoch cannot live inside a kernel that also holds the dataset, the tokenizer, dozens of tensors, and every earlier output; and when it dies halfway there is no clean place to restart from. The script rebuilds the data path itself — load, format, tokenize, filter, split — then trains, and it takes `--dataset_size`, `--epochs`, `--lr`, `--max_seq_len`, `--grad_clip_norm`, and `--checkpoint_path` so a run can be resumed from weights without editing code.
+
+Two additions matter for the memory problem from the last session. The step log now prints tokens per second and an ETA, and the run ends by reporting peak CUDA memory. If the next attempt dies I want the numbers from the death, not a guess about which tensor blew the budget.
+
+I also added `--use_think_tokens` to switch between the base tokenizer with plain concatenated reasoning and the reasoning tokenizer with explicit tags, because the data supports both and I do not yet know which one trains better. And the notebook keeps a `plot_distill_metrics` reader that draws train and validation loss against steps with the epoch boundaries marked underneath, so a finished run is inspectable without reading the CSV.
+
