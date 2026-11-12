@@ -196,3 +196,11 @@ On a toy group of four rollouts with `eps = 10` the ratios came out `[20.09, 1.2
 
 I set `eps = 10` deliberately loose so the effect would be visible; real training would use something near 0.2. The point is that a single rollout can no longer dominate the update just because its likelihood swerved.
 
+## 2026-11-13 — Chapter 7: a reference model keeps the policy honest
+
+The clip limits how far a single update moves, but not how far the policy can drift over many of them. So the loss now carries a KL term against a frozen copy of the starting model: deep-copy it, turn off gradients, and score each rollout with both. `logps - ref_logps` is the per-rollout drift, weighted by `exp(...)` and scaled by `kl_coeff`.
+
+Setting `kl_coeff = 0.0` skips building the reference entirely, so I can compare with and without it. That matters: the reference doubles the scoring cost and pins the policy to what the base model already knew — which is the point, but also a ceiling.
+
+One thing to be careful with before tuning the coefficient: the penalty comes out as a scalar per rollout rather than a token-level KL sum, so its scale depends on how long the answer is. That has to be measured, not assumed.
+
