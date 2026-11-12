@@ -156,3 +156,11 @@ The test rollouts show the rule's sharp edge. `\boxed{83}` and "The correct answ
 
 Turning the rewards into signal is just group normalization: `[1, 1, 0, 0]` becomes advantages of `±0.8659`. That is the GRPO idea at this scale — compare each rollout against its siblings instead of against an absolute score.
 
+## 2026-11-12 — Chapter 6: the score has to keep its gradients
+
+Sequence scoring is back, but this time it has to be differentiable. GRPO updates the policy using the log-probability of what the model actually generated, so `sequence_logprob` runs without `inference_mode`, casts the logits to float, and gathers the sampled token ids. The result still carries a `SumBackward0` node, which is the whole point.
+
+The number agrees with my earlier long-hand estimate: mean log-prob times token count gives `-15.75`, the direct sum gives `-15.7349`. That's a useful cross-check that the chapter 5 implementation wasn't subtly wrong.
+
+The rollout scores also show that likelihood does not track correctness: `\boxed{83}` scores `-8.24`, "The correct answer is `\boxed{83}`" scores `-19.83`, and the unboxed "The final answer is 83" scores `-16.16`. The model is least comfortable with the exact format the reward cares most about, which is precisely the gap the training loop is meant to close.
+
