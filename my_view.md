@@ -180,3 +180,11 @@ I'm deliberately not running this to completion, and I'm not running the evaluat
 
 So chapter 6 stops here, with the loop, logging, and checkpointing ready. I'm going to improve the GRPO itself in the next chapter before spending GPU hours on a full run — more rollouts per group, a reward that isn't so brittle, and an evaluation that can actually tell whether any of it helped.
 
+## 2026-11-12 — Chapter 7: measuring GRPO before improving it
+
+Improving the training loop without measurements is guesswork, so chapter 7 starts by deciding what to watch. `compute_advantage_stats` returns the advantages along with their mean and spread, which tells me whether a group actually contained any signal.
+
+The other number is entropy. Per-token entropy is `-p log p` summed over the vocabulary: `1.37` for a peaked toy distribution and `11.93` at the uniform maximum for 151,900 tokens. `sequence_logprob_and_entropy` now returns both the answer log-probability and the mean per-step entropy of the answer tokens, so I can see both during training.
+
+Entropy is the one I expect to matter most. If it collapses, the policy has stopped exploring and GRPO has nothing left to learn from; if it sits near the uniform maximum the model is guessing. Either way I want that visible instead of inferred from a loss curve.
+
