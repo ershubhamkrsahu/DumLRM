@@ -124,3 +124,11 @@ Self-refinement needs a way to tell whether a revision actually helped, and at i
 
 On the algebra prompt the conservative sample (temperature 0.5, top-p 0.5) scored 2.340 against 2.170 for the looser one (0.9/0.7). Both reached `83`, so the gap is entirely formatting and length — which is all a reference-free score can see, and also its danger: nothing in it stops a shorter answer from being a wrong one.
 
+## 2026-11-12 — Chapter 5: a sequence score that survives length
+
+Ranking whole answers needs a likelihood over the sequence, not one token. Multiplying per-token probabilities is the textbook definition, but in bfloat16 a five-token sentence underflowed to exactly `0.0000` — and any real answer would too, so the product cannot discriminate between candidates at all.
+
+Summing log-probabilities fixes it. The same sentence ending in "Berlin" scored `-16.75`, against `-30.00` ending in "Bridge" — a real gap, and still meaningful when the answer runs to hundreds of tokens. That is the score I'll use to compare refined drafts.
+
+The catch is that raw log-likelihood rewards shorter sequences for free, which is the brevity bonus all over again but hidden inside the math. I'll have to decide whether to normalize by length or accept the bias deliberately.
+
