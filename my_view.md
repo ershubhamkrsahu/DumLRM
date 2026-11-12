@@ -140,3 +140,11 @@ The result is a scale I can compare across answers of different lengths. "The ca
 
 I'm treating this as my confidence measure now, with one caveat: the second comparison cell prints a stale `score` variable instead of recomputing it, so that duplicated `-0.069` is not actually evidence yet. Fix that before trusting any comparison.
 
+## 2026-11-12 — Chapter 5: the refinement loop works, the score does not
+
+The full loop is in place: draft an answer, ask the model to critique it, ask it to revise using that critique, and keep the revision only if the score does not drop. On the algebra problem both iterations kept `83` — but the log-probability score rejected both revisions, `-1.375` and then `-0.301` against `-0.053` for the original draft.
+
+That is the first result that contradicts the plan. The revisions are not worse answers; they were written in response to a critique, which is a narrower and more constrained context than the original question, so their per-token likelihood is naturally lower. Scored this way the loop can only ever keep the first draft — a self-refinement loop that refuses every refinement.
+
+The obvious fixes all have costs: compare the extracted answers rather than the text, normalize the score against the refinement prompt, or accept only when the answer changes. I want to pick one deliberately instead of grabbing whichever makes the numbers go up.
+
