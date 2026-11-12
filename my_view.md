@@ -226,3 +226,11 @@ The dataset is 12,000 R1 math traces. Before building anything on it I graded al
 
 The length distribution is the real constraint. Average 2,946 tokens, longest 42,005, and only 6,695 survive a 2,048-token cutoff — I throw away 5,305 examples, 44% of the set, to fit the context I can train on. What's left averages 1,180 tokens, and I split it into 25 validation and 6,670 train. I'd rather discard the long traces than pad or truncate someone's reasoning halfway through, but it does mean the hardest problems are the ones I'm not learning from.
 
+## 2026-11-13 — Chapter 8: scoring the base model on its own targets
+
+Before any training I need a baseline loss, and I want to be sure the loss is the right one. Distillation should only score the answer tokens, not the prompt — the model is not being taught to reproduce the question. `compute_example_loss` shifts the ids by one, keeps the logits from the first answer position onward, and applies cross-entropy there.
+
+The check that it is the same quantity as before: averaging the answer tokens from `sequence_logprob` gives `1.69`, and direct cross-entropy gives `1.68`. The gap is just rounding, but it confirms chapter 6's differentiable scorer and a textbook loss agree on what the model thinks of the R1 trace.
+
+On three train examples the base model sits at `0.98`, and on three validation examples `1.02`. Those are low because the targets are R1's polished solutions and the 0.6B base model already finds them plausible — which is exactly the point of distillation and also the danger. If the model already agrees this strongly, the gradient has little to teach it, and I should watch whether the loss can move much at all.
+
