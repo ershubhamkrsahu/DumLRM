@@ -132,3 +132,11 @@ Summing log-probabilities fixes it. The same sentence ending in "Berlin" scored 
 
 The catch is that raw log-likelihood rewards shorter sequences for free, which is the brevity bonus all over again but hidden inside the math. I'll have to decide whether to normalize by length or accept the bias deliberately.
 
+## 2026-11-12 — Chapter 5: averaging per-token scores fixes the length bias
+
+That length problem had a straightforward fix: score only the answer tokens and take the mean instead of the sum. `avg_logprob_answer` encodes the prompt and the answer separately so it knows exactly where the answer starts, then averages the log-probabilities of those tokens only.
+
+The result is a scale I can compare across answers of different lengths. "The capital of Germany is Berlin." scores `-0.2100`, while the same sentence ending in "Bridge." scores `-3.9062`. Both candidate derivations of the algebra problem land at `-0.069` — which is at least plausible, since both are the model's own samples conditioned on its own prompt.
+
+I'm treating this as my confidence measure now, with one caveat: the second comparison cell prints a stale `score` variable instead of recomputing it, so that duplicated `-0.069` is not actually evidence yet. Fix that before trusting any comparison.
+
