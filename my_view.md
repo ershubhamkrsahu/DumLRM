@@ -148,3 +148,11 @@ That is the first result that contradicts the plan. The revisions are not worse 
 
 The obvious fixes all have costs: compare the extracted answers rather than the text, normalize the score against the refinement prompt, or accept only when the answer changes. I want to pick one deliberately instead of grabbing whichever makes the numbers go up.
 
+## 2026-11-12 — Chapter 6: a reward that only counts boxed answers
+
+Rollouts now come from a dedicated `sample_response` that keeps the KV cache and returns the token ids plus the prompt length, because GRPO needs the whole sequence and the boundary between prompt and answer. Rewards are binary: `reward_rlvr` extracts the final candidate and hands it to the grader from chapter 3, returning `1.0` or `0.0`.
+
+The test rollouts show the rule's sharp edge. `\boxed{83}` and "The correct answer is `\boxed{83}`" both score 1.0 and `\boxed{38}` scores 0.0 — but so does "The final answer is 83". With `fallback=None` the extractor deliberately refuses anything unboxed, so the model has to learn the format along with the reasoning. That's a choice, not an accident, and I want to see whether it costs me answers that were right.
+
+Turning the rewards into signal is just group normalization: `[1, 1, 0, 0]` becomes advantages of `±0.8659`. That is the GRPO idea at this scale — compare each rollout against its siblings instead of against an absolute score.
+
