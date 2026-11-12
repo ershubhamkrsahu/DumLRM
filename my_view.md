@@ -118,3 +118,9 @@ The first run was the tie case I needed to see: five samples at temperature 0.8 
 
 Running the same five samples batched gave three `83` and settled on `83` in 17.53s, against 39.92s for the sequential pass. Roughly 2.3× faster for the same work, which makes batching the version worth keeping. The empty extractions are the next thing to fix.
 
+## 2026-11-12 — Chapter 5: scoring answers without a reference
+
+Self-refinement needs a way to tell whether a revision actually helped, and at inference time there is no ground truth to check against. So `heuristic_score` rewards what I can verify without one: a properly boxed final answer (+2), a fallback extracted number (+1), and a brevity bonus of `1.5 * exp(-len/500)` so a padded derivation cannot win just by being long.
+
+On the algebra prompt the conservative sample (temperature 0.5, top-p 0.5) scored 2.340 against 2.170 for the looser one (0.9/0.7). Both reached `83`, so the gap is entirely formatting and length — which is all a reference-free score can see, and also its danger: nothing in it stops a shorter answer from being a wrong one.
+
