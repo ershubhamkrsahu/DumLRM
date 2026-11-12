@@ -218,3 +218,11 @@ Before changing more code I collected the published tricks and picked the ones t
 
 The rest are queued behind those: clip-higher, truncated importance sampling, per-reward group normalization from GDPO, and sequence-level clipping from GSPO. I'm not implementing them all. The point of the list is to stop guessing which knob to turn next, and to keep a citation next to each change so I can tell whether I'm following the literature or just fiddling.
 
+## 2026-11-13 — Chapter 8: learning from a better model's reasoning
+
+Chapter 8 changes what supervision looks like. RLVR only ever learns from the final answer, so a rollout is either right or wrong with nothing in between. Distillation imitates the whole trace instead: `format_distilled_answer` stitches the DeepSeek-R1 `message_thinking` into `<think>...</think>` and appends the written solution, so the training target is a worked argument, not just `\boxed{6}`.
+
+The dataset is 12,000 R1 math traces. Before building anything on it I graded all of them with the chapter 3 extractor and grader: 90.6% (10,871/12,000) produce an answer the grader accepts. That's the first time I have measured a dataset rather than assumed it, and `evaluate_json.py` now does that from the command line against any `.json`/`.jsonl` of records.
+
+The length distribution is the real constraint. Average 2,946 tokens, longest 42,005, and only 6,695 survive a 2,048-token cutoff — I throw away 5,305 examples, 44% of the set, to fit the context I can train on. What's left averages 1,180 tokens, and I split it into 25 validation and 6,670 train. I'd rather discard the long traces than pad or truncate someone's reasoning halfway through, but it does mean the hardest problems are the ones I'm not learning from.
+
