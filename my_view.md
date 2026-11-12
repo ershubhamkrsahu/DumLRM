@@ -188,3 +188,11 @@ The other number is entropy. Per-token entropy is `-p log p` summed over the voc
 
 Entropy is the one I expect to matter most. If it collapses, the policy has stopped exploring and GRPO has nothing left to learn from; if it sits near the uniform maximum the model is guessing. Either way I want that visible instead of inferred from a loss curve.
 
+## 2026-11-12 — Chapter 7: clipping the policy ratio
+
+The first real change to GRPO is PPO-style clipping. Instead of weighting the log-probability directly, compare the new policy against the one that produced the rollout — `ratio = exp(new_logp - old_logp)` — clamp it to `[1-eps, 1+eps]`, and take `min(ratio * adv, clipped_ratio * adv)`.
+
+On a toy group of four rollouts with `eps = 10` the ratios came out `[20.09, 1.22, 0.14, 1.00]`; the first was clipped to `11.0`, and the loss moved from `-2.5764` to `-2.3998`. The mean policy ratio was `5.61`, which is a very large step — exactly the situation the clip exists to defuse.
+
+I set `eps = 10` deliberately loose so the effect would be visible; real training would use something near 0.2. The point is that a single rollout can no longer dominate the update just because its likelihood swerved.
+
