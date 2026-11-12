@@ -212,3 +212,9 @@ The tokenizer work is the fiddly part. In the base tokenizer `<think>` splits in
 
 I also added `render_prompt_with_think_tokens` to ask for the tags in the prompt rather than hoping the model invents the format. There is a real tension here: a format reward is cheap signal, but it also teaches the model that being shaped right is worth as much as being correct. That weight is a knob I'll have to set deliberately, not leave at 1.0 by default.
 
+## 2026-11-13 — Chapter 7: the shortlist of GRPO fixes
+
+Before changing more code I collected the published tricks and picked the ones that answer problems I actually hit. The empty-group problem from chapter 6 maps directly onto DAPO's dynamic sampling and zero-gradient filtering — throw away the groups with no reward spread instead of stepping on them. The length sensitivity I flagged in the KL term maps onto token-level loss and Dr. GRPO dropping the standard-deviation normalization, which also removes the length bias in the advantage.
+
+The rest are queued behind those: clip-higher, truncated importance sampling, per-reward group normalization from GDPO, and sequence-level clipping from GSPO. I'm not implementing them all. The point of the list is to stop guessing which knob to turn next, and to keep a citation next to each change so I can tell whether I'm following the literature or just fiddling.
+
