@@ -23,6 +23,7 @@ dependencies = [
     "setuptools>=61.0",
     "sympy>=1.14.0",
     "matplotlib>=3.10.7",
+    "muon>=0.1.9",
 ]
 
 classifiers = [
