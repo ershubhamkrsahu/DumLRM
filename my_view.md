@@ -204,3 +204,11 @@ Setting `kl_coeff = 0.0` skips building the reference entirely, so I can compare
 
 One thing to be careful with before tuning the coefficient: the penalty comes out as a scalar per rollout rather than a token-level KL sum, so its scale depends on how long the answer is. That has to be measured, not assumed.
 
+## 2026-11-13 — Chapter 7: rewarding the shape of the answer
+
+The boxed-answer reward only fires when the math is right, so early in training almost every group is all-zero and nothing gets learned. The fix is a second, easy reward: 1.0 if the rollout contains a `<think>` before a `</think>`, 0.0 otherwise. Combined as `rlvr_reward + format_reward_weight * format_reward`, it gives even a wrong answer something to climb toward.
+
+The tokenizer work is the fiddly part. In the base tokenizer `<think>` splits into three ordinary ids, so `reward_format` could never find it. Registering `<think>` and `</think>` as special tokens gives them single ids (`151667`, `151668`), and the reasoning tokenizer download (`tokenizer-reasoning.json`) already ships with them as special tokens. The reward then just checks that the start id appears before the end id inside the generated span; a missing marker raises `ValueError` and scores zero.
+
+I also added `render_prompt_with_think_tokens` to ask for the tags in the prompt rather than hoping the model invents the format. There is a real tension here: a format reward is cheap signal, but it also teaches the model that being shaped right is worth as much as being correct. That weight is a knob I'll have to set deliberately, not leave at 1.0 by default.
+
