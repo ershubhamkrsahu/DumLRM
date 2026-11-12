@@ -172,3 +172,11 @@ The first real run hit that branch: two rollouts, both scored 0.0, advantages `[
 
 That is the real constraint on this training loop: with only two rollouts most groups will be all-wrong or all-right, and neither teaches anything. I need more samples per problem so the group actually contains a mix, and I should skip the examples where it doesn't.
 
+## 2026-11-12 — Chapter 6: stopping before the real run
+
+The training loop is written and it works: `train_rlvr_grpo` zeroes the gradients, computes the batched GRPO loss, backpropagates, clips them, steps the optimizer, writes loss/reward/response length to a CSV, and checkpoints along the way. I started a 50-step run and stopped it after three — step 3 was the first step with any signal at all (loss 13.43, average reward 0.5) — and kept the interrupt checkpoint.
+
+I'm deliberately not running this to completion, and I'm not running the evaluation that comes after it. The machinery is in place but the setup is too thin to learn anything I'd trust: two rollouts per problem, most groups with no reward spread, and a reward that ignores correct answers that forgot to box. Training it as-is would mostly teach the model formatting noise.
+
+So chapter 6 stops here, with the loop, logging, and checkpointing ready. I'm going to improve the GRPO itself in the next chapter before spending GPU hours on a full run — more rollouts per group, a reward that isn't so brittle, and an evaluation that can actually tell whether any of it helped.
+
