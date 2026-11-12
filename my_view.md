@@ -164,3 +164,11 @@ The number agrees with my earlier long-hand estimate: mean log-prob times token 
 
 The rollout scores also show that likelihood does not track correctness: `\boxed{83}` scores `-8.24`, "The correct answer is `\boxed{83}`" scores `-19.83`, and the unboxed "The final answer is 83" scores `-16.16`. The model is least comfortable with the exact format the reward cares most about, which is precisely the gap the training loop is meant to close.
 
+## 2026-11-12 — Chapter 6: the first GRPO step learns nothing, correctly
+
+The loss is in place: advantage times the log-probability of each rollout, negated and averaged. `compute_grpo_loss_batched` wraps sampling, rewarding, scoring, and that loss into a single call, and short-circuits when every advantage is zero instead of returning a meaningless gradient.
+
+The first real run hit that branch: two rollouts, both scored 0.0, advantages `[0.0, 0.0]`, loss `-0.0`. On the Sam problem one rollout quit after four tokens with `<|endoftext|>` and the other was cut off mid-sentence with no box, so neither could be graded. Nothing was learned, and nothing should have been.
+
+That is the real constraint on this training loop: with only two rollouts most groups will be all-wrong or all-right, and neither teaches anything. I need more samples per problem so the group actually contains a mix, and I should skip the examples where it doesn't.
+
