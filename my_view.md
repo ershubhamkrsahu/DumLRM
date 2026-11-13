@@ -1,6 +1,6 @@
 # My View
 
-A journal of the substantial work on DumLRM — capabilities, design decisions, and improvements worth remembering. I skip the boilerplate and the fixes; those belong in the commit history.
+A journal of the substantial work on DumLRM — capabilities, design decisions, and improvements worth remembering. Each entry is tagged with the commit where that work landed. I skip the boilerplate and the fixes; those belong in the commit history.
 
 ## Status
 
@@ -8,7 +8,7 @@ The theoretical portion of DumLRM is complete. Chapters 2 through 8 now cover th
 
 The trained models have not been uploaded yet. I will upload the checkpoints and list them in this view once training is finished.
 
-## 2026-11-11 — Chapter 2: getting Qwen3's tokenizer under my fingers
+## [8a5dd84](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/8a5dd84916b29af57d7e22a14fd923aac70838eb) — Chapter 2: getting Qwen3's tokenizer under my fingers
 
 I pulled down the small Qwen3 base tokenizer and ran real text through it before touching any model code. Encoding "Explain the large language models." gave me seven clean tokens, so I at least know the vocab and the encode/decode path agree with each other.
 
@@ -16,7 +16,7 @@ I also grabbed the 0.6B base checkpoint locally so I can load weights without re
 
 Next I want the checkpoint loaded in the Qwen3 class and a forward pass verified before I trust anything downstream.
 
-## 2026-11-11 — Chapter 2: tokenizer verified, weights on disk, device picked
+## [c787610](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/c787610c8c81d5ddc4c6c2d419709bdf953440b9) — Chapter 2: tokenizer verified, weights on disk, device picked
 
 Encoding and decoding now agree, so the tokenizer side of chapter 2 is solid. I made the notebook print each token with the decoded text wrapped in backticks — a small change, but it makes whitespace visible, and whitespace is exactly where I'd expect BPE to bite me later.
 
@@ -24,31 +24,31 @@ Then I pulled the full 0.6B base checkpoint (1.4 GiB) and added the device-selec
 
 Next: load the checkpoint into the Qwen3 model and validate the forward pass. That's the first real test of whether the architecture code is actually correct.
 
-## 2026-11-11 — Chapter 2: the pretrained checkpoint loads clean
+## [15119d9](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/15119d98607969a9b8f2033198bf0d8304514663) — Chapter 2: the pretrained checkpoint loads clean
 
 The Qwen3 0.6B weights went into my `Qwen3Model` with a strict state-dict match on the first attempt. That's the signal I was waiting for: the config and parameter names line up with the real model, so the architecture I'm building matches what these weights expect.
 
 Loading is necessary but not sufficient, though. Next I need an actual forward pass and a look at the logits before I trust the model for generation.
 
-## 2026-11-11 — Chapter 2: first forward pass
+## [b9bd511](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/b9bd511b535cae6e0b1782cf110e0c89e227fcae) — Chapter 2: first forward pass
 
 The model ran end to end: six prompt tokens in, a `[6, 151936]` logits tensor out. That vocabulary dimension matching Qwen3's 151,936 tokens is the concrete proof that the output head and the checkpoint actually agree, not just that the parameter names lined up.
 
 The remaining bridge is turning those logits into predicted tokens — that's where an off-by-one or a wrong transpose would finally show up.
 
-## 2026-11-11 — Chapter 2: it generates text
+## [a5e2573](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/a5e25731a16138dceb3a78e15392f8e1f73236f0) — Chapter 2: it generates text
 
 I wired up a streaming generator — greedy argmax on the last position, yield each token, stop on EOS — and it produced coherent English on the first run. Watching my own forward pass turn into readable output is the point where chapter 2 stopped feeling theoretical.
 
 The implementation is deliberately naive: it re-runs the whole sequence for every new token, so it gets slower the longer the output. I'm leaving that alone for now; the KV-cache version is where the real optimization work starts, and I'd rather have a correct baseline to compare against.
 
-## 2026-11-11 — Chapter 2: baseline numbers
+## [364ce19](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/364ce197801cf1a54e23491053d09ae28ca880b4) — Chapter 2: baseline numbers
 
 I stopped guessing and measured the naive generator: 25 new tokens in 1.08 s, about 23 tokens/sec, with 1.47 GB peak CUDA memory. That's the baseline every optimization from here has to beat.
 
 The detail that matters is the measurement itself — synchronizing CUDA before reading the clock and resetting peak memory afterwards. Without the sync the timing is meaningless, because the kernel launches return before the GPU finishes. Now the KV-cache rewrite gets a fair comparison instead of a flattering one.
 
-## 2026-11-11 — Chapter 2: the KV cache is correct, but not faster
+## [8627ceb](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/8627ceb39f47b41ff2beff5fabda40809cbe9e96) — Chapter 2: the KV cache is correct, but not faster
 
 I added a cached generator that keeps keys and values across steps and only feeds the newest token. It produces the same text as the naive loop, so the mechanism is right — but the benchmark says 24 tokens/sec against 27 for the version that recomputes everything, with memory essentially unchanged (2.90 vs 2.94 GB).
 
@@ -56,11 +56,11 @@ The reason is in the cache itself: this implementation concatenates the cached K
 
 I'm keeping both generators side by side. The next step is the real fix — preallocating the cache and writing into a fixed slot — and I want the before/after numbers to stay in the notebook so the speedup is provable.
 
-## 2026-11-11 — Chapter 2: skipping torch.compile
+## [f9350ec](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/f9350ecb495d91c83bc298658383de9f87b0e8ef) — Chapter 2: skipping torch.compile
 
 I tried wrapping the generator in `torch.compile` and it failed with "Cannot find a working triton installation". On Windows that's a toolchain problem rather than a code problem, and I'm not going to chase it right now — the manual KV-cache rewrite is the thing I actually want to understand. Once the cache is preallocated and I have clean before/after numbers, I'll come back and see whether compile stacks on top.
 
-## 2026-11-11 — Chapter 3: a real prompt, and the base model does math
+## [ce27151](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/ce271514c8127a800273a9b9409fee83736553e7) — Chapter 3: a real prompt, and the base model does math
 
 I split the notebooks by chapter — chapter 2 is now `ch02_llm_basics`, and chapter 3 begins in `ch03_measuring_performance`. The first thing I wanted was a reusable `load_model_and_tokenizer` helper so I stop copy-pasting model setup between notebooks; it handles both the base and reasoning checkpoints, including the reasoning tokenizer's chat and thinking flags.
 
@@ -68,7 +68,7 @@ Then I gave the base model an actual math problem: given `a+b=3` and `ab=13/6`, 
 
 Chapter 3 is about measuring this properly, so the next step is timing long generations like this one instead of eyeballing them.
 
-## 2026-11-11 — Chapter 3: the answer grader works
+## [3349dba](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/3349dba79fcd8a0858e06c772f24881b2f39304a) — Chapter 3: the answer grader works
 
 I finally have a grader I trust enough to build on. `split_into_parts` handles tuple and list answers, and `grade_answer` normalizes both sides and compares each part with the sympy check. Sixteen cases — fractions, roots, decimals, tuples, percentages, `\text{}`, `\cdot`, degrees, superscripts — all land on the expected result, including the tuple case that returned False a few cells earlier.
 
@@ -76,7 +76,7 @@ The cases that are supposed to fail also fail: wrong order, wrong length, `50%` 
 
 Next is running this over a real evaluation set so I get an actual accuracy number instead of a vibe.
 
-## 2026-11-11 — Chapter 3: the first real accuracy number
+## [cbee9a9](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/cbee9a93e01c152e8f2c4054996c99361e9f12c7) — Chapter 3: the first real accuracy number
 
 I ran the base model over the first 10 MATH-500 problems with a "you are a math assistant" template and got 30% (3/10) in 21 seconds. That's the first honest number I've had, and it's lower than the earlier standalone math prompt made things feel — the same model that produced `14/3` answered `10` to that exact problem once it was wrapped in the assistant template.
 
@@ -84,7 +84,7 @@ That's useful rather than disappointing. It tells me the base model is very sens
 
 Next: inspect that file for systematic failure modes before changing anything, then run the full 500.
 
-## 2026-11-11 — Chapter 4: inference scaling begins
+## [f1da2dd](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/f1da2dd8038b2d426826da66a6a258bb93ac1cdc) — Chapter 4: inference scaling begins
 
 Chapter 4 starts with a small but important change to the generation wrapper: `generate_text_stream_concat_flex` takes a `generate_func` plus extra keyword arguments, so the sampling and multi-candidate strategies later in the chapter can plug into the same loop instead of me rewriting it each time.
 
@@ -92,7 +92,7 @@ The first sample I ran makes the chapter's case for it. Asked to solve `(3x-9)/2
 
 I'd rather build that on a clean interface now than bolt it on after the fact.
 
-## 2026-11-11 — Chapter 4: "explain step by step" fixes the wrong answer
+## [3349462](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/334946261ced698857b7a9219e4314a66bcf117b) — Chapter 4: "explain step by step" fixes the wrong answer
 
 Appending "Explain step by step." to the same prompt turned that `20` into a full derivation ending in `\boxed{83}` — correct. Same model, same greedy decoding, same problem; the only change is asking it to show its work.
 
@@ -100,7 +100,7 @@ That reframes the chapter for me. The model already knew the algebra, it just wa
 
 I'm keeping the prompt change explicit in the notebook so it's clear which single variable moved the result.
 
-## 2026-11-12 — Chapter 4: temperature turns the model into a sampler
+## [f8cbc4e](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/f8cbc4edf0d02384ba0f97c993a75417265adde2) — Chapter 4: temperature turns the model into a sampler
 
 I added temperature scaling to the cached generator: divide the logits by `T`, softmax them, then draw with `torch.multinomial` instead of taking the argmax. Temperature 0 stays on the exact greedy path, so I always have deterministic output to fall back on.
 
@@ -108,7 +108,7 @@ Seeing the distribution made it click. At low temperature the "Berlin" completio
 
 That's the tradeoff I'm buying into: diversity is what lets me try several answers, but it only helps if I have a way to pick the good one. Next is generating multiple candidates and choosing between them.
 
-## 2026-11-12 — Chapter 4: top-p keeps sampling from wandering off
+## [6696661](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/66966611ea7a565984d2cb89888ee209a2cc3624) — Chapter 4: top-p keeps sampling from wandering off
 
 I wired the nucleus filter into a real generator: `top_p_filter` sorts probabilities, keeps the smallest set whose mass crosses `p`, and renormalizes. `generate_text_top_p_stream_cache` applies it after temperature scaling, with `top_p=None` meaning unfiltered.
 
@@ -116,7 +116,7 @@ Running the algebra prompt at `temperature=1.1, top_p=0.8` still reached `83`, b
 
 Top-p also fixes the failure mode I saw with high temperature alone: it cuts the flat, low-probability tail that produces nonsense while leaving real choice among the plausible tokens.
 
-## 2026-11-12 — Chapter 4: self-consistency turns samples into a decision
+## [b0b6895](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/b0b68950f0d8dc6767ec605c464012695afd6ba9) — Chapter 4: self-consistency turns samples into a decision
 
 Sampling several answers does nothing on its own; I still needed a way to choose between them. `self_consistency_vote` generates `num_samples` answers, extracts the final candidate from each, and takes the majority. Ties return `None` instead of letting the first answer win arbitrarily.
 
@@ -124,13 +124,13 @@ The first run was the tie case I needed to see: five samples at temperature 0.8 
 
 Running the same five samples batched gave three `83` and settled on `83` in 17.53s, against 39.92s for the sequential pass. Roughly 2.3× faster for the same work, which makes batching the version worth keeping. The empty extractions are the next thing to fix.
 
-## 2026-11-12 — Chapter 5: scoring answers without a reference
+## [4b845cf](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/4b845cfe63f9823a1d53229e0c20cd685b06c018) — Chapter 5: scoring answers without a reference
 
 Self-refinement needs a way to tell whether a revision actually helped, and at inference time there is no ground truth to check against. So `heuristic_score` rewards what I can verify without one: a properly boxed final answer (+2), a fallback extracted number (+1), and a brevity bonus of `1.5 * exp(-len/500)` so a padded derivation cannot win just by being long.
 
 On the algebra prompt the conservative sample (temperature 0.5, top-p 0.5) scored 2.340 against 2.170 for the looser one (0.9/0.7). Both reached `83`, so the gap is entirely formatting and length — which is all a reference-free score can see, and also its danger: nothing in it stops a shorter answer from being a wrong one.
 
-## 2026-11-12 — Chapter 5: a sequence score that survives length
+## [4f3a991](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/4f3a991a16acc04b12d924ec4c0f528d63c21c2e) — Chapter 5: a sequence score that survives length
 
 Ranking whole answers needs a likelihood over the sequence, not one token. Multiplying per-token probabilities is the textbook definition, but in bfloat16 a five-token sentence underflowed to exactly `0.0000` — and any real answer would too, so the product cannot discriminate between candidates at all.
 
@@ -138,7 +138,7 @@ Summing log-probabilities fixes it. The same sentence ending in "Berlin" scored 
 
 The catch is that raw log-likelihood rewards shorter sequences for free, which is the brevity bonus all over again but hidden inside the math. I'll have to decide whether to normalize by length or accept the bias deliberately.
 
-## 2026-11-12 — Chapter 5: averaging per-token scores fixes the length bias
+## [69fa879](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/69fa879d11723320b3da4899e5bfa4049d3fb71c) · [ede61c5](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/ede61c536cf9a0136ddd39b3a622592c13757389) — Chapter 5: averaging per-token scores fixes the length bias
 
 That length problem had a straightforward fix: score only the answer tokens and take the mean instead of the sum. `avg_logprob_answer` encodes the prompt and the answer separately so it knows exactly where the answer starts, then averages the log-probabilities of those tokens only.
 
@@ -146,7 +146,7 @@ The result is a scale I can compare across answers of different lengths. "The ca
 
 I'm treating this as my confidence measure now, with one caveat: the second comparison cell prints a stale `score` variable instead of recomputing it, so that duplicated `-0.069` is not actually evidence yet. Fix that before trusting any comparison.
 
-## 2026-11-12 — Chapter 5: the refinement loop works, the score does not
+## [af02bb3](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/af02bb39e2ff015eec198b8c4f63bf4849cad247) — Chapter 5: the refinement loop works, the score does not
 
 The full loop is in place: draft an answer, ask the model to critique it, ask it to revise using that critique, and keep the revision only if the score does not drop. On the algebra problem both iterations kept `83` — but the log-probability score rejected both revisions, `-1.375` and then `-0.301` against `-0.053` for the original draft.
 
@@ -154,7 +154,7 @@ That is the first result that contradicts the plan. The revisions are not worse 
 
 The obvious fixes all have costs: compare the extracted answers rather than the text, normalize the score against the refinement prompt, or accept only when the answer changes. I want to pick one deliberately instead of grabbing whichever makes the numbers go up.
 
-## 2026-11-12 — Chapter 6: a reward that only counts boxed answers
+## [a175fd3](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/a175fd3e09bc6668c736974d4a97a5a2db553cf1) — Chapter 6: a reward that only counts boxed answers
 
 Rollouts now come from a dedicated `sample_response` that keeps the KV cache and returns the token ids plus the prompt length, because GRPO needs the whole sequence and the boundary between prompt and answer. Rewards are binary: `reward_rlvr` extracts the final candidate and hands it to the grader from chapter 3, returning `1.0` or `0.0`.
 
@@ -162,7 +162,7 @@ The test rollouts show the rule's sharp edge. `\boxed{83}` and "The correct answ
 
 Turning the rewards into signal is just group normalization: `[1, 1, 0, 0]` becomes advantages of `±0.8659`. That is the GRPO idea at this scale — compare each rollout against its siblings instead of against an absolute score.
 
-## 2026-11-12 — Chapter 6: the score has to keep its gradients
+## [609e271](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/609e27166d222ea4009b7f2367e69b0227bb5475) — Chapter 6: the score has to keep its gradients
 
 Sequence scoring is back, but this time it has to be differentiable. GRPO updates the policy using the log-probability of what the model actually generated, so `sequence_logprob` runs without `inference_mode`, casts the logits to float, and gathers the sampled token ids. The result still carries a `SumBackward0` node, which is the whole point.
 
@@ -170,7 +170,7 @@ The number agrees with my earlier long-hand estimate: mean log-prob times token 
 
 The rollout scores also show that likelihood does not track correctness: `\boxed{83}` scores `-8.24`, "The correct answer is `\boxed{83}`" scores `-19.83`, and the unboxed "The final answer is 83" scores `-16.16`. The model is least comfortable with the exact format the reward cares most about, which is precisely the gap the training loop is meant to close.
 
-## 2026-11-12 — Chapter 6: the first GRPO step learns nothing, correctly
+## [23b3b36](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/23b3b36059c1746654cc455a421641ae9a6f96db) — Chapter 6: the first GRPO step learns nothing, correctly
 
 The loss is in place: advantage times the log-probability of each rollout, negated and averaged. `compute_grpo_loss_batched` wraps sampling, rewarding, scoring, and that loss into a single call, and short-circuits when every advantage is zero instead of returning a meaningless gradient.
 
@@ -178,7 +178,7 @@ The first real run hit that branch: two rollouts, both scored 0.0, advantages `[
 
 That is the real constraint on this training loop: with only two rollouts most groups will be all-wrong or all-right, and neither teaches anything. I need more samples per problem so the group actually contains a mix, and I should skip the examples where it doesn't.
 
-## 2026-11-12 — Chapter 6: stopping before the real run
+## [af45b78](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/af45b7873773aaf4d526b597be05b87984d0c254) — Chapter 6: stopping before the real run
 
 The training loop is written and it works: `train_rlvr_grpo` zeroes the gradients, computes the batched GRPO loss, backpropagates, clips them, steps the optimizer, writes loss/reward/response length to a CSV, and checkpoints along the way. I started a 50-step run and stopped it after three — step 3 was the first step with any signal at all (loss 13.43, average reward 0.5) — and kept the interrupt checkpoint.
 
@@ -186,7 +186,7 @@ I'm deliberately not running this to completion, and I'm not running the evaluat
 
 So chapter 6 stops here, with the loop, logging, and checkpointing ready. I'm going to improve the GRPO itself in the next chapter before spending GPU hours on a full run — more rollouts per group, a reward that isn't so brittle, and an evaluation that can actually tell whether any of it helped.
 
-## 2026-11-12 — Chapter 7: measuring GRPO before improving it
+## [d3ec4aa](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/d3ec4aa8c30f3eac5ed301792aa94fc3ed99fd88) — Chapter 7: measuring GRPO before improving it
 
 Improving the training loop without measurements is guesswork, so chapter 7 starts by deciding what to watch. `compute_advantage_stats` returns the advantages along with their mean and spread, which tells me whether a group actually contained any signal.
 
@@ -194,7 +194,7 @@ The other number is entropy. Per-token entropy is `-p log p` summed over the voc
 
 Entropy is the one I expect to matter most. If it collapses, the policy has stopped exploring and GRPO has nothing left to learn from; if it sits near the uniform maximum the model is guessing. Either way I want that visible instead of inferred from a loss curve.
 
-## 2026-11-12 — Chapter 7: clipping the policy ratio
+## [e487600](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/e487600b26c36090a17f8cc577aa754fd52387dd) — Chapter 7: clipping the policy ratio
 
 The first real change to GRPO is PPO-style clipping. Instead of weighting the log-probability directly, compare the new policy against the one that produced the rollout — `ratio = exp(new_logp - old_logp)` — clamp it to `[1-eps, 1+eps]`, and take `min(ratio * adv, clipped_ratio * adv)`.
 
@@ -202,7 +202,7 @@ On a toy group of four rollouts with `eps = 10` the ratios came out `[20.09, 1.2
 
 I set `eps = 10` deliberately loose so the effect would be visible; real training would use something near 0.2. The point is that a single rollout can no longer dominate the update just because its likelihood swerved.
 
-## 2026-11-13 — Chapter 7: a reference model keeps the policy honest
+## [a2ebea8](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/a2ebea83adfc01eb760007bb872b73ff442a48ba) — Chapter 7: a reference model keeps the policy honest
 
 The clip limits how far a single update moves, but not how far the policy can drift over many of them. So the loss now carries a KL term against a frozen copy of the starting model: deep-copy it, turn off gradients, and score each rollout with both. `logps - ref_logps` is the per-rollout drift, weighted by `exp(...)` and scaled by `kl_coeff`.
 
@@ -210,7 +210,7 @@ Setting `kl_coeff = 0.0` skips building the reference entirely, so I can compare
 
 One thing to be careful with before tuning the coefficient: the penalty comes out as a scalar per rollout rather than a token-level KL sum, so its scale depends on how long the answer is. That has to be measured, not assumed.
 
-## 2026-11-13 — Chapter 7: rewarding the shape of the answer
+## [30d0045](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/30d00457a748ac1412fb0b4bbdf415a2080b9c8a) — Chapter 7: rewarding the shape of the answer
 
 The boxed-answer reward only fires when the math is right, so early in training almost every group is all-zero and nothing gets learned. The fix is a second, easy reward: 1.0 if the rollout contains a `<think>` before a `</think>`, 0.0 otherwise. Combined as `rlvr_reward + format_reward_weight * format_reward`, it gives even a wrong answer something to climb toward.
 
@@ -218,13 +218,13 @@ The tokenizer work is the fiddly part. In the base tokenizer `<think>` splits in
 
 I also added `render_prompt_with_think_tokens` to ask for the tags in the prompt rather than hoping the model invents the format. There is a real tension here: a format reward is cheap signal, but it also teaches the model that being shaped right is worth as much as being correct. That weight is a knob I'll have to set deliberately, not leave at 1.0 by default.
 
-## 2026-11-13 — Chapter 7: the shortlist of GRPO fixes
+## [6b488ac](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/6b488acf4cea5e6b7c271bdc33d878f73c80666c) — Chapter 7: the shortlist of GRPO fixes
 
 Before changing more code I collected the published tricks and picked the ones that answer problems I actually hit. The empty-group problem from chapter 6 maps directly onto DAPO's dynamic sampling and zero-gradient filtering — throw away the groups with no reward spread instead of stepping on them. The length sensitivity I flagged in the KL term maps onto token-level loss and Dr. GRPO dropping the standard-deviation normalization, which also removes the length bias in the advantage.
 
 The rest are queued behind those: clip-higher, truncated importance sampling, per-reward group normalization from GDPO, and sequence-level clipping from GSPO. I'm not implementing them all. The point of the list is to stop guessing which knob to turn next, and to keep a citation next to each change so I can tell whether I'm following the literature or just fiddling.
 
-## 2026-11-13 — Chapter 8: learning from a better model's reasoning
+## [1e2382d](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/1e2382d9e411e2b9b925c371842e43984e7ba6f1) — Chapter 8: learning from a better model's reasoning
 
 Chapter 8 changes what supervision looks like. RLVR only ever learns from the final answer, so a rollout is either right or wrong with nothing in between. Distillation imitates the whole trace instead: `format_distilled_answer` stitches the DeepSeek-R1 `message_thinking` into `<think>...</think>` and appends the written solution, so the training target is a worked argument, not just `\boxed{6}`.
 
@@ -232,7 +232,7 @@ The dataset is 12,000 R1 math traces. Before building anything on it I graded al
 
 The length distribution is the real constraint. Average 2,946 tokens, longest 42,005, and only 6,695 survive a 2,048-token cutoff — I throw away 5,305 examples, 44% of the set, to fit the context I can train on. What's left averages 1,180 tokens, and I split it into 25 validation and 6,670 train. I'd rather discard the long traces than pad or truncate someone's reasoning halfway through, but it does mean the hardest problems are the ones I'm not learning from.
 
-## 2026-11-13 — Chapter 8: scoring the base model on its own targets
+## [e3bcb75](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/e3bcb754662897dc1ac9f84caf31a769d95f6393) — Chapter 8: scoring the base model on its own targets
 
 Before any training I need a baseline loss, and I want to be sure the loss is the right one. Distillation should only score the answer tokens, not the prompt — the model is not being taught to reproduce the question. `compute_example_loss` shifts the ids by one, keeps the logits from the first answer position onward, and applies cross-entropy there.
 
@@ -240,7 +240,7 @@ The check that it is the same quantity as before: averaging the answer tokens fr
 
 On three train examples the base model sits at `0.98`, and on three validation examples `1.02`. Those are low because the targets are R1's polished solutions and the 0.6B base model already finds them plausible — which is exactly the point of distillation and also the danger. If the model already agrees this strongly, the gradient has little to teach it, and I should watch whether the loss can move much at all.
 
-## 2026-11-13 — Chapter 8: the training loop runs out of memory
+## [bad4026](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/bad40268b807dc77c18264a18afcb71acb38b1d8) — Chapter 8: the training loop runs out of memory
 
 The distillation loop is written: AdamW at `lr=5e-6`, per-example steps with gradient clipping at `1.0`, validation every five steps, epoch checkpoints, and a CSV row per log line. I ran it on ten train and ten validation examples for two epochs, and it logged exactly one line — `train_loss=0.9688 val_loss=0.9074` at step 5 — then died with a CUDA out-of-memory error trying to allocate 124 MiB.
 
@@ -250,7 +250,7 @@ Some of that budget I can explain. The loss keeps full-vocabulary logits for the
 
 So before training this chapter properly I need one of: batched or chunked loss computation that does not materialize every position at once, activation checkpointing, a smaller context, or simply a bigger GPU. I'd rather fix the memory profile than shrink the data further — I already threw away 44% of it to fit 2,048 tokens.
 
-## 2026-11-13 — Chapter 8: the loop belongs in a script
+## [5067958](https://github.com/ShubhamKumarSahu-svg/DumLRM/commit/50679586383aad342bc4a27045c30a3bf4fa09ce) — Chapter 8: the loop belongs in a script
 
 The training loop is now `distill.py` rather than a notebook cell. A 6,670-example epoch cannot live inside a kernel that also holds the dataset, the tokenizer, dozens of tensors, and every earlier output; and when it dies halfway there is no clean place to restart from. The script rebuilds the data path itself — load, format, tokenize, filter, split — then trains, and it takes `--dataset_size`, `--epochs`, `--lr`, `--max_seq_len`, `--grad_clip_norm`, and `--checkpoint_path` so a run can be resumed from weights without editing code.
 
