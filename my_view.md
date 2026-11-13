@@ -2,6 +2,12 @@
 
 A journal of the substantial work on DumLRM — capabilities, design decisions, and improvements worth remembering. I skip the boilerplate and the fixes; those belong in the commit history.
 
+## Status
+
+The theoretical portion of DumLRM is complete. Chapters 2 through 8 now cover the tokenizer and model from scratch, evaluation, inference scaling, self-refinement, GRPO, the GRPO improvements, and distillation.
+
+The trained models have not been uploaded yet. I will upload the checkpoints and list them in this view once training is finished.
+
 ## 2026-11-11 — Chapter 2: getting Qwen3's tokenizer under my fingers
 
 I pulled down the small Qwen3 base tokenizer and ran real text through it before touching any model code. Encoding "Explain the large language models." gave me seven clean tokens, so I at least know the vocab and the encode/decode path agree with each other.
