@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-from reasoning_from_scratch.ch03 import (
+from reasoning_utils import (
     extract_final_candidate,
     grade_answer,
 )

@@ -40,9 +40,6 @@ Thumbs.db
 .idea/
 *.swp
 
-# Upstream reference clone used while working through the chapters
-/reasoning-from-scratch/
-
 # Downloaded model assets (reproducible via the download helpers)
 *.pth
 *.pt
