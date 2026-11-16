@@ -257,4 +257,3 @@ The training loop is now `distill.py` rather than a notebook cell. A 6,670-examp
 Two additions matter for the memory problem from the last session. The step log now prints tokens per second and an ETA, and the run ends by reporting peak CUDA memory. If the next attempt dies I want the numbers from the death, not a guess about which tensor blew the budget.
 
 I also added `--use_think_tokens` to switch between the base tokenizer with plain concatenated reasoning and the reasoning tokenizer with explicit tags, because the data supports both and I do not yet know which one trains better. And the notebook keeps a `plot_distill_metrics` reader that draws train and validation loss against steps with the epoch boundaries marked underneath, so a finished run is inspectable without reading the CSV.
-
