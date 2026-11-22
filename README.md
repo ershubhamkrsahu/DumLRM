@@ -56,11 +56,11 @@ inside the notebooks download them automatically on first run.
 
 | Dataset | Contents | File |
 |---------|----------|------|
-| [MATH-500 test](https://huggingface.co/datasets/shubhamisok/math-500/blob/main/math500_test.json) | 500 held-out competition math problems | `math500_test.json` |
-| [MATH train split](https://huggingface.co/datasets/shubhamisok/math-500/blob/main/math_full_minus_math500.json) | MATH training problems with MATH-500 removed | `math_full_minus_math500.json` |
-| [DeepSeek-R1 traces](https://huggingface.co/datasets/shubhamisok/math-500/blob/main/deepseek-r1-math-train.json) | 12,000 problems with R1 thinking and final answers | `deepseek-r1-math-train.json` |
+| [MATH-500 test](https://huggingface.co/datasets/ershubhamkrsahu/math-500/blob/main/math500_test.json) | 500 held-out competition math problems | `math500_test.json` |
+| [MATH train split](https://huggingface.co/datasets/ershubhamkrsahu/math-500/blob/main/math_full_minus_math500.json) | MATH training problems with MATH-500 removed | `math_full_minus_math500.json` |
+| [DeepSeek-R1 traces](https://huggingface.co/datasets/ershubhamkrsahu/math-500/blob/main/deepseek-r1-math-train.json) | 12,000 problems with R1 thinking and final answers | `deepseek-r1-math-train.json` |
 
-Dataset repository: [shubhamisok/math-500](https://huggingface.co/datasets/shubhamisok/math-500).
+Dataset repository: [ershubhamkrsahu/math-500](https://huggingface.co/datasets/ershubhamkrsahu/math-500).
 
 ## Models
 
@@ -76,8 +76,8 @@ below when training finishes.
 
 <!--
 When a checkpoint is uploaded, replace the matching "Coming soon" cell with:
-[DumLRM-GRPO](https://huggingface.co/shubhamisok/dumlrm-grpo)
-[DumLRM-Distilled](https://huggingface.co/shubhamisok/dumlrm-distilled)
+[DumLRM-GRPO](https://huggingface.co/ershubhamkrsahu/dumlrm-grpo)
+[DumLRM-Distilled](https://huggingface.co/ershubhamkrsahu/dumlrm-distilled)
 -->
 
 ## Quick start
@@ -86,7 +86,7 @@ You need Python 3.10–3.13 and [uv](https://docs.astral.sh/uv/). A CUDA GPU is
 recommended; the model runs on CPU, but generation will be slow.
 
 ```bash
-git clone https://github.com/ShubhamKumarSahu-svg/DumLRM.git
+git clone https://github.com/ershubhamkrsahu/DumLRM.git
 cd DumLRM
 uv sync
 uv run jupyter lab
